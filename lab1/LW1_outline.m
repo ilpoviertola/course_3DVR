@@ -16,9 +16,9 @@
 
 %1.
 %create point cloud 
-% Points=pointCloud([0 0 3; 5 0 5; 2.5 2.5 0]);
+Points=pointCloud([0 0 3; 5 0 5; 2.5 2.5 0]);
 % %visualize point cloud
-% pcshow(Points)
+pcshow(Points)
 % 
 % %2.
 % %create transformation
