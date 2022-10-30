@@ -37,7 +37,17 @@ pcshow(Points)
 %     
 % end
     
-PointsMoved=rigidTransform(20,50,40,[0 2 3]);
+z = deg2rad(20);
+y = deg2rad(50);
+x = deg2rad(40);
+
+R = [
+    cos(z)*cos(y) cos(z)*cos(y)*sin(x)-sin(z)*cos(x) cos(z)*sin(y)*cos(x)+sin(z)*sin(x);
+    cos(z)*cos(y) cos(z)*cos(y)*sin(x)+sin(z)*cos(x) cos(z)*sin(y)*cos(x)-sin(z)*sin(x);
+    -sin(y) cos(y)*sin(x) cos(y)*cos(x)
+];
+
+PointsMoved=pointCloud(rigidTransform(Points.Location, R, [0 2 3]));
 %Visualize the point cloud piar
 f2=figure;pcshowpair(Points,PointsMoved, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',200)
 offset=.2;
