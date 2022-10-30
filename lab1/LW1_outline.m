@@ -87,6 +87,7 @@ rmse = sqrt(err/ptsAlligned.Count);
 %% Task C: Create a function to iteratively allign bunny ptsMoved point cloud  to the reference [mandatory]
 
 %load dataset
+addpath('Data and Demos')
 load('bunny.mat')
 
 % extract points
@@ -98,11 +99,11 @@ DownsampleStep=0.0015; % can be changed
 visualize=true;
 
 %Perform ICP
-[bunny_estR,bunny_estt]=ICP();
+[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 100, [0 0]);
 
 % Visualize Seperately
-% bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
-% figure,pcshowpair(bunny,bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
+ bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
+ figure,pcshowpair(bunny,bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 
 %% Task D: Add an adaptive Stop Criterion to task C [+1]
 
@@ -119,11 +120,11 @@ tolerance=[0.001, 0.001];  % can be changed
 visualize=true;
 
 %Perform ICP
-[bunny_estR,bunny_estt]=ICP();
+[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 300, tolerance);
 
 % Visualize Seperately
-% bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
-% figure,pcshowpair(bunny,bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
+ bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
+ figure,pcshowpair(bunny,bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 
 
 %% Task E:	Registration and Stitching of multiple Point Clouds [+1]
