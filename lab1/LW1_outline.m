@@ -41,11 +41,17 @@ z = deg2rad(20);
 y = deg2rad(50);
 x = deg2rad(40);
 
-R = [
-    cos(z)*cos(y) cos(z)*cos(y)*sin(x)-sin(z)*cos(x) cos(z)*sin(y)*cos(x)+sin(z)*sin(x);
-    cos(z)*cos(y) cos(z)*cos(y)*sin(x)+sin(z)*cos(x) cos(z)*sin(y)*cos(x)-sin(z)*sin(x);
-    -sin(y) cos(y)*sin(x) cos(y)*cos(x)
-];
+Rx=[1 0 0;
+    0 cos(x) -sin(x);
+    0 sin(x) cos(x)];
+Ry=[cos(y) 0 sin(y);
+    0 1 0;
+    -sin(y) 0 cos(y)];
+Rz=[cos(z) -sin(z) 0;
+    sin(z) cos(z) 0;
+    0 0 1];
+
+R=Rz*Ry*Rx;
 
 PointsMoved=pointCloud(rigidTransform(Points.Location, R, [0 2 3]));
 %Visualize the point cloud piar
@@ -68,8 +74,11 @@ pts=Points.Location; %reference points
 ptsMoved=PointsMoved.Location; % Points to align to reference
 
 % Estimate the transformation [R,t]
+[R, t] = estimateRT_pt2pt(pts, ptsMoved);
 
 % Transform 
+rotatedPoints=inv(R)*transpose(ptsMoved)-inv(R)*t;
+ptsAlligned=pointCloud(transpose(rotatedPoints));
 
 % Visualize
 figure,pcshowpair(Points,ptsAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',200)
@@ -129,13 +138,16 @@ visualize=true;
 
 %% Task E:	Registration and Stitching of multiple Point Clouds [+1]
 
+%Kaikki muut pointCloudit menee hienosti päällekkäin, mutta 5 ja 6 jää y
+%akselin suhteen lomittain...
+
 %load dataset
 load('FabLab_scans.mat')
 
 % Set parameters
-DownsampleStep=;
+DownsampleStep=0.00015;
 mergeSize=0.01;  %sets the parameter for pcmerge function to merge 2 points if they are assumed to be same.
-tolerance=;
+tolerance=[0.001, 0.001];
 visualize=true;
 
 %visualize first pointcloud 
@@ -155,29 +167,27 @@ newPtCloud=FabLabm{1};
 Rs(:,:,1)=eye(3);
 ts(:,1)=[0 0 0]';
 
-for i = 2:length(FabLabm)
-       
+for i = 2:(length(FabLabm))
     % Use previous  point cloud as reference.
     referencePtCloud = newPtCloud;
     
     % get new point cloud which you want to register to the previous point cloud
-    newPtCloud = ;
-    
-    % Apply ICP registration.
-    [estR,estt]=ICP();
+    newPtCloud = FabLabm{i};
 
+    % Apply ICP registration.
+    [estR,estt]=ICP(referencePtCloud, newPtCloud, DownsampleStep, 0.9, 300, tolerance);
     
     %Accumulate the transformations as shown in Task A and as used inside the ICP function
-    Rs(:,:,i) = ;
-    ts(:,i) = ;
-    
+    Rs(:,:,i) = estR;
+    ts(:,i) = estt;
+
     % Transform the current/new point cloud to the reference coordinate system
     % defined by the first point cloud using the accumulated transformation.  
-    ptCloudAligned= pointCloud(rigidTransform(..));
+    ptCloudAligned= pointCloud(rigidTransform(newPtCloud.Location, Rs(:,:,i), transpose(ts(:,i))));
     ptCloudAligned.Color=newPtCloud.Color;
     
     % Merge the newly alligned point cloud into the global map to update
-    Map = pcmerge(.., .., mergeSize);
+    Map = pcmerge(referencePtCloud, ptCloudAligned, mergeSize);
 
     % Visualize the world scene.
     hScatter.XData = Map.Location(:,1);
