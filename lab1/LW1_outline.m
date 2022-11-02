@@ -6,10 +6,8 @@
 
 % Fill out the information below
 
-% Group members:
+% Group members: Petri Vainio, Ilpo Viertola, Henrik Lauronen
 % Tasks Completed: 
-
-
 
 
 %% Task A:  Apply transformation on point and visualize  [mandatory]
@@ -53,7 +51,7 @@ Rz=[cos(z) -sin(z) 0;
 
 R=Rz*Ry*Rx;
 
-PointsMoved=pointCloud(rigidTransform(Points.Location, R, [0 2 3]));
+PointsMoved=pointCloud(rigidTransform(Points.Location, R, [0 2 3]'));
 %Visualize the point cloud piar
 f2=figure;pcshowpair(Points,PointsMoved, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',200)
 offset=.2;
@@ -64,7 +62,6 @@ title('Original and Transformed points')
 xlabel('X (unit)')
 ylabel('Y (unit)')
 zlabel('Z (unit)')
-
 
 %% Task B: Estimate homogenous transformation [rotation and translation] between original and transformed point cloud of task A [mandatory]
 % First run task A to get data for this task B
@@ -108,7 +105,7 @@ DownsampleStep=0.0015; % can be changed
 visualize=true;
 
 %Perform ICP
-[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 100, [0 0]);
+[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, [0 0], false,0);
 
 % Visualize Seperately
  bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
@@ -129,25 +126,23 @@ tolerance=[0.001, 0.001];  % can be changed
 visualize=true;
 
 %Perform ICP
-[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 300, tolerance);
+[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 300, tolerance, false,0);
 
 % Visualize Seperately
  bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
  figure,pcshowpair(bunny,bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 
 
-%% Task E:	Registration and Stitching of multiple Point Clouds [+1]
 
-%Kaikki muut pointCloudit menee hienosti päällekkäin, mutta 5 ja 6 jää y
-%akselin suhteen lomittain...
+%% Task E:	Registration and Stitching of multiple Point Clouds [+1]
 
 %load dataset
 load('FabLab_scans.mat')
 
 % Set parameters
-DownsampleStep=0.00015;
+DownsampleStep=0.001;
 mergeSize=0.01;  %sets the parameter for pcmerge function to merge 2 points if they are assumed to be same.
-tolerance=[0.001, 0.001];
+tolerance=[0.01, 0.01];
 visualize=true;
 
 %visualize first pointcloud 
@@ -164,10 +159,11 @@ hScatter = hAxes.Children;
 
 % To initialize the pipeline
 newPtCloud=FabLabm{1};
-Rs(:,:,1)=eye(3);
-ts(:,1)=[0 0 0]';
 
-for i = 2:(length(FabLabm))
+Rs=eye(3);
+ts=[0 0 0]';
+
+for i = 2:length(FabLabm)
     % Use previous  point cloud as reference.
     referencePtCloud = newPtCloud;
     
@@ -175,19 +171,19 @@ for i = 2:(length(FabLabm))
     newPtCloud = FabLabm{i};
 
     % Apply ICP registration.
-    [estR,estt]=ICP(referencePtCloud, newPtCloud, DownsampleStep, 0.9, 300, tolerance);
+    [estR,estt]=ICP(referencePtCloud, newPtCloud, DownsampleStep, 0.8, 300, tolerance, false, 0);
     
     %Accumulate the transformations as shown in Task A and as used inside the ICP function
     Rs(:,:,i) = estR;
-    ts(:,i) = estt;
+    ts(:,i) = estt';
 
     % Transform the current/new point cloud to the reference coordinate system
     % defined by the first point cloud using the accumulated transformation.  
-    ptCloudAligned= pointCloud(rigidTransform(newPtCloud.Location, Rs(:,:,i), transpose(ts(:,i))));
+    ptCloudAligned= pointCloud(rigidTransform(newPtCloud.Location, Rs, ts));
     ptCloudAligned.Color=newPtCloud.Color;
     
     % Merge the newly alligned point cloud into the global map to update
-    Map = pcmerge(referencePtCloud, ptCloudAligned, mergeSize);
+    Map = pcmerge(Map, ptCloudAligned, mergeSize);
 
     % Visualize the world scene.
     hScatter.XData = Map.Location(:,1);
@@ -208,6 +204,7 @@ load('slab.mat')
 pts=slab1.Location;%reference points
 ptsMoved=slab2.Location; %Points to align to reference
 
+figure,pcshowpair(slab1,slab2, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 % Set parameters
 DownsampleStep=0.3;
 tolerance=[0.001, 0.001];
@@ -215,13 +212,21 @@ visualize=true;
 
 % For testing here, we donot use colour as input. The default distance based ICP is used
 useColour=false;
-[slab_estR,slab_estt]=ICP(); % colour input only used for visualization
+[slab_estR,slab_estt]=ICP(slab1, slab2, DownsampleStep, 0.90, 600, tolerance, useColour,0); % colour input only used for visualization
 
+slabAlligned=pointCloud(rigidTransform(ptsMoved,slab_estR,slab_estt));
+slabAlligned.Color=slab1.Color;
+
+figure,pcshowpair(slab1,slabAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 % Use colour assisted ICP
 useColour=true;
-[slab_estR,slab_estt]=ICP();% colour used both for visualization and estimation
+alpha=0.003;
+[slab_estR,slab_estt]=ICP(slab1, slab2, DownsampleStep, 0.75, 1000, tolerance, useColour, alpha);% colour used both for visualization and estimation
 
+slabAlligned=pointCloud(rigidTransform(ptsMoved,slab_estR,slab_estt));
+slabAlligned.Color=slab2.Color;
 
+figure,pcshowpair(slab1,slabAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 %% Task G: Create a function to iteratively allign  bunny ptsMoved using point-2-plane metric [+1]
 %load dataset
 load('bunny.mat')
