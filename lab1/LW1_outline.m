@@ -105,7 +105,7 @@ DownsampleStep=0.0015; % can be changed
 visualize=true;
 
 %Perform ICP
-[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, [0 0], false,0);
+[bunny_estR,bunny_estt,err]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, [0 0], false,0);
 
 % Visualize Seperately
  bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
@@ -126,7 +126,7 @@ tolerance=[0.001, 0.001];  % can be changed
 visualize=true;
 
 %Perform ICP
-[bunny_estR,bunny_estt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 300, tolerance, false,0);
+[bunny_estR,bunny_estt,err]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 300, tolerance, false,0);
 
 % Visualize Seperately
  bunnyAlligned=pointCloud(rigidTransform(ptsMoved,bunny_estR,bunny_estt));
@@ -171,7 +171,7 @@ for i = 2:length(FabLabm)
     newPtCloud = FabLabm{i};
 
     % Apply ICP registration.
-    [estR,estt]=ICP(referencePtCloud, newPtCloud, DownsampleStep, 0.8, 300, tolerance, false, 0);
+    [estR,estt,err]=ICP(referencePtCloud, newPtCloud, DownsampleStep, 0.8, 300, tolerance, false, 0);
     
     %Accumulate the transformations as shown in Task A and as used inside the ICP function
     Rs(:,:,i) = estR;
@@ -212,7 +212,7 @@ visualize=true;
 
 % For testing here, we donot use colour as input. The default distance based ICP is used
 useColour=false;
-[slab_estR,slab_estt]=ICP(slab1, slab2, DownsampleStep, 0.90, 600, tolerance, useColour,0); % colour input only used for visualization
+[slab_estR,slab_estt,err]=ICP(slab1, slab2, DownsampleStep, 0.90, 600, tolerance, useColour,0); % colour input only used for visualization
 
 slabAlligned=pointCloud(rigidTransform(ptsMoved,slab_estR,slab_estt));
 slabAlligned.Color=slab1.Color;
@@ -221,7 +221,7 @@ figure,pcshowpair(slab1,slabAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'do
 % Use colour assisted ICP
 useColour=true;
 alpha=0.003;
-[slab_estR,slab_estt]=ICP(slab1, slab2, DownsampleStep, 0.75, 1000, tolerance, useColour, alpha);% colour used both for visualization and estimation
+[slab_estR,slab_estt,err]=ICP(slab1, slab2, DownsampleStep, 0.75, 1000, tolerance, useColour, alpha);% colour used both for visualization and estimation
 
 slabAlligned=pointCloud(rigidTransform(ptsMoved,slab_estR,slab_estt));
 slabAlligned.Color=slab2.Color;
@@ -242,7 +242,19 @@ useColour=false;
 visualize=true;
 
 % compare the convergence both metrics in terms of iterations and final error
-[bunny_estR,bunny_estt,err_pt]=ICP(); % point-to-point method
-[bunny_estR,bunny_estt,err_pl]=ICP(); % point-to-plane method
+disp('Using Point2Point');
+[bunny_estR,bunny_estt,err_pt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, tolerance, useColour, 0); % point-to-point method
+disp(['delta_t ' num2str(err_pt(1)) '; delta_R ' num2str(err_pt(2))]);
+disp('Using Point2Plane');
+[bunny_estR_pl,bunny_estt_pl,err_pl]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, tolerance, useColour, 0, 1); % point-to-plane method
+disp(['delta_t ' num2str(err_pl(1)) '; delta_R ' num2str(err_pl(2))]);
+
+bunnyAlligned_pt=pointCloud(rigidTransform(ptsMoved, bunny_estR, bunny_estt));
+figure,pcshowpair(bunny, bunnyAlligned_pt, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
+title('Point2Point')
+
+bunnyAlligned_pl=pointCloud(rigidTransform(ptsMoved,bunny_estR_pl,bunny_estt_pl));
+figure,pcshowpair(bunny, bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
+title('Point2Plane')
 
 

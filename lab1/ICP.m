@@ -1,4 +1,9 @@
-function [out_estR,out_estt] = ICP(pts, ptsMoved, downsampleStep, correspondences, maxIterations, tolerance, useColour, alpha)
+function [out_estR,out_estt,err] = ICP(pts, ptsMoved, downsampleStep, correspondences, maxIterations, tolerance, useColour, alpha, usePt2Pl)
+    % set point-to-point as default
+    if(nargin < 9)
+        usePt2Pl = 0;
+    end
+
     vector_size=3;
     % Initialize R and t
     out_estR = eye(3,3);
@@ -48,9 +53,13 @@ function [out_estR,out_estt] = ICP(pts, ptsMoved, downsampleStep, correspondence
             ptsAligned_filtered = pts_sorted(1:n,5:7);
         end
         
-        % Calculate R,t with function from B
-        [R,t] = estimateRT_pt2pt(nearest_Filtered, ptsAligned_filtered);
-                
+        % Calculate R,t with function from G/B
+        if(usePt2Pl)
+            [R,t] = estimateRT_pt2pl(nearest_Filtered, ptsAligned_filtered);
+        else
+            [R,t] = estimateRT_pt2pt(nearest_Filtered, ptsAligned_filtered);
+        end
+            
         out_estR = out_estR*R;
         out_estt = out_estt-t;
         
@@ -62,6 +71,7 @@ function [out_estR,out_estt] = ICP(pts, ptsMoved, downsampleStep, correspondence
             break;
         end
     end
-    disp([num2str(k) ' iterations'])
+    err = [delta_t delta_R];
+    disp(['usePt2Pl ' num2str(usePt2Pl) '; ' num2str(k) ' iterations'])
 end
 
