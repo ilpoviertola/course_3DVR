@@ -7,7 +7,7 @@
 % Fill out the information below
 
 % Group members: Petri Vainio, Ilpo Viertola, Henrik Lauronen
-% Tasks Completed: 
+% Tasks Completed: A,B,C,D,E,F,G
 
 
 %% Task A:  Apply transformation on point and visualize  [mandatory]
@@ -227,6 +227,21 @@ slabAlligned=pointCloud(rigidTransform(ptsMoved,slab_estR,slab_estt));
 slabAlligned.Color=slab2.Color;
 
 figure,pcshowpair(slab1,slabAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
+    
+% b - i) Other registration methods typically require the point
+% correspondences to be known prior to alignment. This way the optimal
+% alignment can be calculated extremely efficiently. ICP on the other
+% hand does not require point correspondences to be known before aligning and
+% therefore ICP is a very versitile method. The downside to ICP is that it
+% can be rather slow and/or computationally demanding.
+
+% b - ii) If the point cloud is a smooth surface, some smoothing function 
+% can be used to filter out the noise. Another method is to apply weights 
+% to correspondences and emphasize correspondences known to have less
+% noise (e.g. points closer to the sensor). A third possible solution is 
+% to detect and remove outliers in the point cloud based on its neighboring 
+% points.
+
 %% Task G: Create a function to iteratively allign  bunny ptsMoved using point-2-plane metric [+1]
 %load dataset
 load('bunny.mat')
@@ -259,7 +274,7 @@ figure,pcshowpair(bunny, bunnyAlligned_pt, 'VerticalAxis','Y', 'VerticalAxisDir'
 title('Point2Point')
 
 bunnyAlligned_pl=pointCloud(rigidTransform(ptsMoved,bunny_estR_pl,bunny_estt_pl));
-figure,pcshowpair(bunny, bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
+figure,pcshowpair(bunny, bunnyAlligned_pl, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 title('Point2Plane')
 
 % Point2Plane converges with less iterations and often results to a smaller
