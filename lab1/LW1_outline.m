@@ -243,11 +243,16 @@ visualize=true;
 
 % compare the convergence both metrics in terms of iterations and final error
 disp('Using Point2Point');
+t = datetime('now');
 [bunny_estR,bunny_estt,err_pt]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, tolerance, useColour, 0); % point-to-point method
-disp(['delta_t ' num2str(err_pt(1)) '; delta_R ' num2str(err_pt(2))]);
+dur = datetime('now') - t;
+disp(['delta_t ' num2str(err_pt(1)) '; delta_R ' num2str(err_pt(2)) '; duration ' char(dur)]);
+
 disp('Using Point2Plane');
+t = datetime('now');
 [bunny_estR_pl,bunny_estt_pl,err_pl]=ICP(bunny, bunnyMoved, DownsampleStep, 0.9, 200, tolerance, useColour, 0, 1); % point-to-plane method
-disp(['delta_t ' num2str(err_pl(1)) '; delta_R ' num2str(err_pl(2))]);
+dur = datetime('now') - t;
+disp(['delta_t ' num2str(err_pl(1)) '; delta_R ' num2str(err_pl(2)) '; duration ' char(dur)]);
 
 bunnyAlligned_pt=pointCloud(rigidTransform(ptsMoved, bunny_estR, bunny_estt));
 figure,pcshowpair(bunny, bunnyAlligned_pt, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
@@ -257,4 +262,7 @@ bunnyAlligned_pl=pointCloud(rigidTransform(ptsMoved,bunny_estR_pl,bunny_estt_pl)
 figure,pcshowpair(bunny, bunnyAlligned, 'VerticalAxis','Y', 'VerticalAxisDir', 'down','MarkerSize',100)
 title('Point2Plane')
 
+% Point2Plane converges with less iterations and often results to a smaller
+% error. However, Point2Point method is not as heavy computation-wise and
+% thus takes less time. 
 
