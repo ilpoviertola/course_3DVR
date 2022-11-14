@@ -34,7 +34,9 @@ load synthdata
 % Depth = imread('./Depth_rect.tif'); 
 
 %% Task 1: Plotting global point cloud (8 lines of code)
-% Back projection from PMD image plane to global space 
+subplot(1,2,1), imshow(Image), subplot(1,2,2), imshow(rescale(Depth), [0 1])
+
+% Back projection from PMD image plane to global space
 
 
 % Plotting
