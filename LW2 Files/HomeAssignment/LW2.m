@@ -35,13 +35,25 @@ load synthdata
 
 %% Task 1: Plotting global point cloud (8 lines of code)
 subplot(1,2,1), imshow(Image), subplot(1,2,2), imshow(rescale(Depth), [0 1])
-
+kinect=false;
 % Back projection from PMD image plane to global space
-
+[X,Y] = meshgrid(-319.5:1:319.5, -239.5:1:239.5);
+Z=zeros(480,640);
+for x = 1:1:640
+    for y = 1:1:480
+        if kinect==false
+            Z(y,x)=(Depth(y,x) ...
+            *((Dparam.f/Dparam.pixelsize) ...
+            /sqrt(((X(y,x)-1)^2+(Y(y,x)-1)^2)+(Dparam.f/Dparam.pixelsize)^2)));
+        end
+        X(y,x)=((X(y,x))/(Dparam.f/Dparam.pixelsize))*Z(y,x);
+        Y(y,x)=((Y(y,x))/(Dparam.f/Dparam.pixelsize))*Z(y,x);
+    end
+end
 
 % Plotting
 figure; hold on;
-scatter3(X(1, :), X(2, :), X(3, :), 10, X(3, :));
+scatter3(X(:), Y(:), Z(:), 10, Z(:));
 colormap jet; colorbar;
 scatter3(0, 0, 0, 500, 'gx', 'LineWidth', 2)
 title('Task 1: Point cloud in global (x,y,z) space');
