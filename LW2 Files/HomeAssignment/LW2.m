@@ -22,32 +22,49 @@
 %--------------------------------------------------------------------------
 
 % Load synthetic data:
-load synthdata
+%load synthdata
 
 % Load real data:
 %   .Depth from Kinect is in "mm";
 %   .Translation vector is in "mm";
 %   .Intrinsic parameters are in "pixels";
+
+kinect=false;
+if kinect
+    load KinectData.mat
+    Image = imread('Colour_rect.tif');
+    Depth = imread('Depth_rect.tif'); 
+else
+    load synthdata
+end
   
 % load KinectData.mat 
-% Image = imread('./Color_rect.tif');
-% Depth = imread('./Depth_rect.tif'); 
+% Image = imread('Colour_rect.tif');
+% Depth = imread('Depth_rect.tif'); 
 
 %% Task 1: Plotting global point cloud (8 lines of code)
 subplot(1,2,1), imshow(Image), subplot(1,2,2), imshow(rescale(Depth), [0 1])
-kinect=false;
+
 % Back projection from PMD image plane to global space
-[X,Y] = meshgrid(-319.5:1:319.5, -239.5:1:239.5);
-Z=zeros(480,640);
-for x = 1:1:640
-    for y = 1:1:480
-        if kinect==false
+
+[X,Y] = meshgrid(-size(Depth,2)/2+0.5:1:size(Depth,2)/2-0.5, -size(Depth,1)/2+0.5:1:size(Depth,1)/2-0.5);
+%[X,Y] = meshgrid(1:1:size(Depth,2), 1:1:size(Depth,1));
+Z=zeros(size(Depth,1),size(Depth,2));
+
+for x = 1:1:size(Depth,2)
+    for y = 1:1:size(Depth,1)
+        if kinect
+            Z=Depth;
+            X(y,x)=(X(y,x))/Dparam.fx*double(Z(y,x));
+            Y(y,x)=(Y(y,x))/Dparam.fy*double(Z(y,x));
+        else
             Z(y,x)=(Depth(y,x) ...
             *((Dparam.f/Dparam.pixelsize) ...
             /sqrt(((X(y,x)-1)^2+(Y(y,x)-1)^2)+(Dparam.f/Dparam.pixelsize)^2)));
+            X(y,x)=((X(y,x)*Z(y,x))/(Dparam.fx/Dparam.pixelsize));
+            Y(y,x)=((Y(y,x)*Z(y,x))/(Dparam.fy/Dparam.pixelsize));
         end
-        X(y,x)=((X(y,x))/(Dparam.f/Dparam.pixelsize))*Z(y,x);
-        Y(y,x)=((Y(y,x))/(Dparam.f/Dparam.pixelsize))*Z(y,x);
+        
     end
 end
 
@@ -64,8 +81,23 @@ axis equal
 drawnow;
 %% Task 2: Projection to color camera image plane (5 lines of code)
 
+u_colorcam=zeros(size(Depth,1),size(Depth,2));
+v_colorcam=zeros(size(Depth,1),size(Depth,2));
+z_colorcam=zeros(size(Depth,1),size(Depth,2));
 
-
+for x = 1:1:size(Depth,2)
+    for y = 1:1:size(Depth,1)
+        k=[R T]*double([X(y,x); Y(y,x); Z(y,x); 1]);
+        if kinect
+            u_colorcam(y,x)=Cparam.fx*(k(1)/k(3))+Cparam.cx;
+            v_colorcam(y,x)=Cparam.fy*(k(2)/k(3))+Cparam.cy;
+        else
+            u_colorcam(y,x)=Cparam.fx/Cparam.pixelsize*(k(1)/k(3))+Cparam.cx;
+            v_colorcam(y,x)=Cparam.fy/Cparam.pixelsize*(k(2)/k(3))+Cparam.cy;
+        end
+        z_colorcam(y,x)=k(3);
+    end
+end
 
 % Plotting
 figure; axis equal
