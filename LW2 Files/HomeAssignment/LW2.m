@@ -87,7 +87,7 @@ z_colorcam=zeros(size(Depth,1),size(Depth,2));
 
 for x = 1:1:size(Depth,2)
     for y = 1:1:size(Depth,1)
-        k=[R T]*double([X(y,x); Y(y,x); Z(y,x); 1]);
+        k=[R T]*[double(X(y,x)); double(Y(y,x)); double(Z(y,x)); double(1)];
         if kinect
             u_colorcam(y,x)=Cparam.fx*(k(1)/k(3))+Cparam.cx;
             v_colorcam(y,x)=Cparam.fy*(k(2)/k(3))+Cparam.cy;
@@ -104,7 +104,11 @@ figure; axis equal
 imshow(Image, []); hold on; %#ok<*NODEF>
 
 % Only drawing the objects in front to check alignment
-objectmask = z_colorcam<13;
+if kinect
+    objectmask = z_colorcam>0;
+else
+    objectmask = z_colorcam<13;
+end
 sc = scatter(u_colorcam(objectmask), v_colorcam(objectmask), 10, z_colorcam(objectmask), 'filled');
 sc.MarkerEdgeAlpha = 0.2;
 sc.MarkerFaceAlpha = 0.2;
