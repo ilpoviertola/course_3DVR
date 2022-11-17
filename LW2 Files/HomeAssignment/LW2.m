@@ -152,19 +152,46 @@ title( 'Task 5: 3D mesh generated from resampled depth with edge artifacts remov
 edgeRemoval(h);
 
 
+
 %% Task 6: Color resampling (4 lines of code)
 
+u_depthcam=zeros(size(Depth,1),size(Depth,2));
+v_depthcam=zeros(size(Depth,1),size(Depth,2));
+z_depthcam=zeros(size(Depth,1),size(Depth,2));
 
+for x = 1:1:size(Depth,2)
+    for y = 1:1:size(Depth,1)
+        k=[R T]*[double(X(y,x)); double(Y(y,x)); double(Z(y,x)); double(1)];
+        if kinect
+            u_depthcam(y,x)=Dparam.fx*(k(1)/k(3))+Dparam.cx;
+            v_depthcam(y,x)=Dparam.fy*(k(2)/k(3))+Dparam.cy;
+        else
+            u_depthcam(y,x)=Dparam.fx/Dparam.pixelsize*(k(1)/k(3))+Dparam.cx;
+            v_depthcam(y,x)=Dparam.fy/Dparam.pixelsize*(k(2)/k(3))+Dparam.cy;
+        end
+        z_depthcam(y,x)=k(3);
+    end
+end
+resampledColorImage = zeros(size(Depth,1),size(Depth,2), 3);
+resampledColorImage(:, :, 1) = u_depthcam;
+resampledColorImage(:, :, 2) = v_depthcam;
+resampledColorImage(:, :, 3) = z_depthcam;
+resampledColorImage = rescale(resampledColorImage, 0, 255);
+z = rescale(Depth);
+
+% [Xq,Yq] = meshgrid(-size(Depth,2)/2+0.5:1:size(Depth,2)/2-0.5, ...
+%                    -size(Depth,1)/2+0.5:1:size(Depth,1)/2-0.5);
+% Vq = interp2(X,Y,Z,Xq,Yq);
 
 % Plotting
-figure; 
+figure;  
 
 subplot( 231); imshow( Image, []); title('Task 3: Original color image')
 subplot( 232); imshow( z_colorcam_reg, []); title('Task 3: Resampled depth image');
 subplot( 233); imshowpair( Image, z_colorcam_reg); title('Task 3: Resampled depth on original color')
 
-subplot( 234); imshow( resampledColorImage, []); title('Task 6: Resampled color image')
-subplot( 235); imshow( z, []); title('Task 6: Original depth image');
+subplot( 234); imshow( z, []); title('Task 6: Original depth image');
+subplot( 235); imshow( resampledColorImage, []); title('Task 6: Resampled color image')
 subplot( 236); imshowpair( resampledColorImage, z); title('Task 6: Resampled color on original depth')
 drawnow;
 
