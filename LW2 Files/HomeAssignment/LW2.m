@@ -117,8 +117,13 @@ drawnow;
 
 %% Task 3: Resampling projected data (3 lines of code)
 
-
-
+z_colorcam_reg = zeros(size(Depth,1),size(Depth,2));
+F = scatteredInterpolant(double(u_colorcam(:)), double(v_colorcam(:)), double(z_colorcam(:)), 'nearest');
+for i = 1:size(Depth,1)
+    for j = 1:size(Depth,2)
+        z_colorcam_reg(i,j) = F(j,i);
+    end
+end
 
 % Plotting
 figure;
