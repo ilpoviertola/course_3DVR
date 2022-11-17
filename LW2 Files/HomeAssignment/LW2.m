@@ -138,7 +138,7 @@ figure;
 surf(z_colorcam_reg, double(Image), 'EdgeColor', 'none')
 set(gca,'ZDir','reverse');
 set(gca,'YDir','reverse');
-title( 'Task 4: 3D mesh generated from resampled depth')
+title('Task 4: 3D mesh generated from resampled depth')
 drawnow;
 
 %% Task 5: Artifact removal (6 lines of code)
