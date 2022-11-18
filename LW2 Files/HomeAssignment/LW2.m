@@ -117,10 +117,10 @@ drawnow;
 
 %% Task 3: Resampling projected data (3 lines of code)
 
-z_colorcam_reg = zeros(size(Depth,1),size(Depth,2));
+z_colorcam_reg = zeros(size(Image,1),size(Image,2));
 F = scatteredInterpolant(double(u_colorcam(:)), double(v_colorcam(:)), double(z_colorcam(:)), 'nearest');
-for i = 1:size(Depth,1)
-    for j = 1:size(Depth,2)
+for i = 1:size(Image,1)
+    for j = 1:size(Image,2)
         z_colorcam_reg(i,j) = F(j,i);
     end
 end
@@ -156,11 +156,11 @@ edgeRemoval(h);
 %% Task 6: Color resampling (4 lines of code)
 resampledColorImage = zeros(size(Depth,1),size(Depth,2), 3);
 
-[x_grid, y_grid] = meshgrid(1:1:size(Depth,2),1:1:size(Depth,1));
+[x_grid, y_grid] = meshgrid(1:1:size(Image,2),1:1:size(Image,1));
 
-resampledColorImage(:,:,1) = interp2(x_grid, y_grid, Image(:,:,1), u_colorcam, v_colorcam);
-resampledColorImage(:,:,2) = interp2(x_grid, y_grid, Image(:,:,2), u_colorcam, v_colorcam);
-resampledColorImage(:,:,3) = interp2(x_grid, y_grid, Image(:,:,3), u_colorcam, v_colorcam);
+resampledColorImage(:,:,1) = interp2(x_grid, y_grid, double(Image(:,:,1)), u_colorcam, v_colorcam);
+resampledColorImage(:,:,2) = interp2(x_grid, y_grid, double(Image(:,:,2)), u_colorcam, v_colorcam);
+resampledColorImage(:,:,3) = interp2(x_grid, y_grid, double(Image(:,:,3)), u_colorcam, v_colorcam);
 
 z = rescale(Depth);
 
