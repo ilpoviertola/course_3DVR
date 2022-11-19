@@ -29,7 +29,7 @@
 %   .Translation vector is in "mm";
 %   .Intrinsic parameters are in "pixels";
 
-kinect=false;
+kinect=true;
 if kinect
     load KinectData.mat
     Image = imread('Colour_rect.tif');
@@ -135,7 +135,14 @@ subplot( 133); imshowpair( Image, z_colorcam_reg); title('Task 3: Resampled dept
 
 % Well, actually, this one is just plotting so you're done already
 figure; 
-surf(z_colorcam_reg, double(Image), 'EdgeColor', 'none')
+
+if kinect
+    %take just important parts to make calculation easier
+    surf(z_colorcam_reg(65:845,560:1480), double(Image(65:845,560:1480)), 'EdgeColor', 'none')
+else
+    surf(z_colorcam_reg, double(Image), 'EdgeColor', 'none')
+end
+
 set(gca,'ZDir','reverse');
 set(gca,'YDir','reverse');
 title('Task 4: 3D mesh generated from resampled depth')
@@ -145,7 +152,14 @@ drawnow;
 
 % Just plotting here, add your implementation to the edgeRemoval.h function
 figure; 
-h = surf(z_colorcam_reg, double(Image), 'EdgeColor', 'none');
+
+if kinect
+    %take just important parts to make calculation easier
+    h = surf(z_colorcam_reg(65:845,560:1480), double(Image(65:845,560:1480)), 'EdgeColor', 'none');
+else
+    h = surf(z_colorcam_reg, double(Image), 'EdgeColor', 'none');
+end
+
 set(gca,'ZDir','reverse');
 set(gca,'YDir','reverse');
 title( 'Task 5: 3D mesh generated from resampled depth with edge artifacts removed')
@@ -178,22 +192,33 @@ drawnow;
 
 
 %% Task 7: Z-buffering (19 lines of code)
+if kinect
+    u_colorcam=u_colorcam(objectmask);
+    v_colorcam=v_colorcam(objectmask);
+    z_colorcam=z_colorcam(objectmask);
+    points=[u_colorcam(:), v_colorcam(:), z_colorcam(:)/max(z_colorcam(:))];
+else
+    points=[u_colorcam(:), v_colorcam(:), z_colorcam(:)];
+end
 
-points=[u_colorcam(:), v_colorcam(:), z_colorcam(:)];
-[uc,vc] = meshgrid(1:size(Depth,2),1:size(Depth,1));
-
-img_coords=[u_colorcam(:), v_colorcam(:), zeros((size(Depth,1)*size(Depth,2)),1)];
-
-Idx = knnsearch(points,img_coords,"K",1,"Distance","euclidean");
+img_dist_0=[u_colorcam(:), v_colorcam(:), zeros((size(z_colorcam,1)*size(z_colorcam,2)),1)];
+Idx = knnsearch(points,img_dist_0,"K",1,"Distance","euclidean");
 uvz_cam=points(Idx,:);
 
+if kinect
+    F = scatteredInterpolant(double(uvz_cam(:,1)), double(uvz_cam(:,2)), double(uvz_cam(:,3)*max(z_colorcam(:))), 'nearest');
+else
+    F = scatteredInterpolant(double(uvz_cam(:,1)), double(uvz_cam(:,2)), double(uvz_cam(:,3)), 'nearest');
+end
+
 z_colorcam_reg_zbuf = zeros(size(Image,1),size(Image,2));
-F = scatteredInterpolant(double(uvz_cam(:,1)), double(uvz_cam(:,2)), double(uvz_cam(:,3)), 'nearest');
 for i = 1:size(Image,1)
     for j = 1:size(Image,2)
         z_colorcam_reg_zbuf(i,j) = F(j,i);
     end
 end
+
+[uc,vc] = meshgrid(1:size(Image,2),1:size(Image,1));
 
 % Plotting
 figure;
@@ -230,10 +255,15 @@ subplot(234); imshow( z_colorcam_reg_zbuf, []);
 title( 'Task 7: Depth data resampled into a regular grid after Z-buffering');
 
 subplot(2, 3, [2 3 5 6]); 
-h = surf(z_colorcam_reg_zbuf, double(Image), 'EdgeColor', 'none');
-set(gca,'ZDir', 'reverse')
+if kinect
+    %take just important parts to make calculation easier
+    h = surf(z_colorcam_reg_zbuf(65:845,560:1480), double(Image(65:845,560:1480)), 'EdgeColor', 'none');
+else
+    h = surf(z_colorcam_reg_zbuf, double(Image), 'EdgeColor', 'none');
+end
+set(gca,'ZDir','reverse');
 set(gca,'YDir','reverse');
-title( 'Task 7: Z-buffering 3D mesh generated from resampled depth')
+title( 'Task 7: Z-buffering 3D mesh generated from resampled depth');
 edgeRemoval(h);
 drawnow;
 %% Task 8: Occlusion handling (14 lines of code)
