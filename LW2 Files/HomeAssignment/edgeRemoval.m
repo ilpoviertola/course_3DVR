@@ -5,7 +5,7 @@ fn = h.FaceNormals;
 fn_size = size(fn);
 for l = 1:fn_size(1)
     for ll = 1:fn_size(2)
-        [~, idx] = max(fn(l, ll, :));
+        [~, idx] = max(abs(fn(l, ll, :)));
         if idx ~= 3
             h.CData(l, ll, :) = NaN;
         end
