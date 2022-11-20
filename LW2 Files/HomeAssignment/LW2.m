@@ -29,7 +29,7 @@
 %   .Translation vector is in "mm";
 %   .Intrinsic parameters are in "pixels";
 
-kinect=true;
+kinect=false;
 if kinect
     load KinectData.mat
     Image = imread('Colour_rect.tif');
@@ -267,12 +267,30 @@ title( 'Task 7: Z-buffering 3D mesh generated from resampled depth');
 edgeRemoval(h);
 drawnow;
 %% Task 8: Occlusion handling (14 lines of code)
+z_colorcam_flat = z_colorcam(:);
+u_colorcam_flat = u_colorcam(:);
+v_colorcam_flat = v_colorcam(:);
 
+% Identify occlusions by searching for the nearest pixel
+v_cc_int = round(v_colorcam);
+u_cc_int = round(u_colorcam);
+[Idx,D] = knnsearch([u_colorcam_flat v_colorcam_flat], [v_cc_int(:) u_cc_int(:)],'Distance', 'chebychev');
+% If distance to nearest pixel is over 1 count these as missing
+Idx = Idx(D > 1);
+pts = [u_colorcam_flat v_colorcam_flat z_colorcam_flat];
+uvz_missing = pts(Idx,:);
+u_missing = uvz_missing(:,1);
+v_missing = uvz_missing(:,2);
+z_missing = uvz_missing(:,3);
 
+if ~kinect
+    ptCloud = pointCloud([u_colorcam_flat v_colorcam_flat z_colorcam_flat]);
+    planeModel = pcfitplane(ptCloud, 1);
+end
 
 % Plotting
 figure;
-scatter3(u_colorcam, v_colorcam, z_colorcam(:), 10, z_colorcam(:));
+scatter3(u_colorcam(:), v_colorcam(:), z_colorcam(:), 10, z_colorcam(:));
 hold on;
 plot(planeModel)
 scatter3(u_missing, v_missing, z_missing, 50, 'gx');
@@ -281,6 +299,28 @@ set(gca,'ZDir','reverse');
 title('UVZ-point cloud with the plane fit (red) and missing pixels (green)')
 drawnow;
 
+z = uvz_cam(:,3);
+% z = (-au - bv - d)/c
+a = planeModel.Parameters(1);
+b = planeModel.Parameters(2);
+c = planeModel.Parameters(3);
+d = planeModel.Parameters(4);
+z(Idx,:) = (-a*u_colorcam_flat(Idx,:) - b*v_colorcam_flat(Idx,:) - d) / c;
+
+uvz = [u_colorcam_flat v_colorcam_flat z];
+
+if kinect
+    F = scatteredInterpolant(double(uvz(:,1)), double(uvz(:,2)), double(uvz(:,3)*max(z_colorcam(:))), 'nearest');
+else
+    F = scatteredInterpolant(double(uvz(:,1)), double(uvz(:,2)), double(uvz(:,3)), 'nearest');
+end
+
+z_colorcam_reg_zbuf_filled = zeros(size(Image,1),size(Image,2));
+for i = 1:size(Image,1)
+    for j = 1:size(Image,2)
+        z_colorcam_reg_zbuf_filled(i,j) = F(j,i);
+    end
+end
 
 figure; 
 subplot(231); imshow( z_colorcam_reg_zbuf, []);
