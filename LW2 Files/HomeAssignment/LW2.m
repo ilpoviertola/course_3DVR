@@ -8,8 +8,8 @@
 %
 % Fill out the information below
 %
-% Group members:
-% Additional tasks completed (5, 6, 7, 8):
+% Group members: Petri Vainio, Ilpo Viertola, Henrik Lauronen
+% Additional tasks completed (5, 6, 7, 8): 5, 6, 7, 8
 %
 % Fill in your implementation at the assigned slots. You can use the 
 % existing drawing scripts or draw your own figures. 
@@ -272,19 +272,23 @@ u_colorcam_flat = u_colorcam(:);
 v_colorcam_flat = v_colorcam(:);
 
 % Identify occlusions by searching for the nearest pixel
-v_cc_int = round(v_colorcam);
-u_cc_int = round(u_colorcam);
-[Idx,D] = knnsearch([u_colorcam_flat v_colorcam_flat], [v_cc_int(:) u_cc_int(:)],'Distance', 'chebychev');
+[Idx,D] = knnsearch([u_colorcam_flat v_colorcam_flat],...
+    [uc(:) vc(:)],'K',2,'Distance', 'euclidean');
+D_n = zeros(size(D,1),1);
+for i=1:size(D,1)
+    D_n(i,1) = min(D(i,:));
+end
+
 % If distance to nearest pixel is over 1 count these as missing
-Idx = Idx(D > 1);
-pts = [u_colorcam_flat v_colorcam_flat z_colorcam_flat];
+Idx = Idx(D_n >= 1.5665);
+pts = [u_colorcam_flat v_colorcam_flat z_colorcam_reg_zbuf(:)];
 uvz_missing = pts(Idx,:);
 u_missing = uvz_missing(:,1);
 v_missing = uvz_missing(:,2);
 z_missing = uvz_missing(:,3);
 
 if ~kinect
-    ptCloud = pointCloud([u_colorcam_flat v_colorcam_flat z_colorcam_flat]);
+    ptCloud = pointCloud([u_colorcam_flat v_colorcam_flat z_colorcam_reg_zbuf(:)]);
     planeModel = pcfitplane(ptCloud, 1);
 end
 
@@ -305,9 +309,9 @@ a = planeModel.Parameters(1);
 b = planeModel.Parameters(2);
 c = planeModel.Parameters(3);
 d = planeModel.Parameters(4);
-z(Idx,:) = (-a*u_colorcam_flat(Idx,:) - b*v_colorcam_flat(Idx,:) - d) / c;
+z(Idx,:) = (-a*u_colorcam_flat(Idx) - b*v_colorcam_flat(Idx) - d) / c;
 
-uvz = [u_colorcam_flat v_colorcam_flat z];
+uvz = [uvz_cam(:,1) uvz_cam(:,2) z];
 
 if kinect
     F = scatteredInterpolant(double(uvz(:,1)), double(uvz(:,2)), double(uvz(:,3)*max(z_colorcam(:))), 'nearest');
