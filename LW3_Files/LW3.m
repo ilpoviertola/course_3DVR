@@ -136,10 +136,10 @@ KD = Dparam;
 KC = Cparam;
 
 % Convert distance map to depth:
-depthImg = Dist2Depth(distMap, KD);
+depthImg = DistToDepth(distMap, KD);
 
 % Mapping colour data to depth image plane:
-[resampledColorImage, colorCamDepth, XYZCam] = MapColor(KC, KD, ...
+[resampledColorImage, colorCamDepth, XYZCam] = GetMappedColor(KC, KD, ...
                                               colorImg, depthImg, ...
                                               R,T);
 
@@ -267,7 +267,12 @@ function depth = DistToDepth(dist, K)
 % Output:
 %   depth - depth map
 
+% Generate X and Y coords of the depth map
+[X,Y] = meshgrid(1:size(dist,2), 1:size(dist,1));
+X = X - K.cx;  % Center the X plane
+Y = Y - K.cy;  % Center the Y plane
 
+depth = K.fp * dist ./ sqrt(K.fp^2 + X.^2 + Y.^2);
 end
 
 function [resampledColorImg, colorCamDepth, XYZCam] = GetMappedColor(KC, KD, ...
@@ -281,7 +286,40 @@ function [resampledColorImg, colorCamDepth, XYZCam] = GetMappedColor(KC, KD, ...
 %   depthImg - depth image
 %   R - relative rotation between color camera and depth camera
 %   T - relative translation between color camera and depth camera
-%
+
+% Generate X and Y coords of the depth map
+[X,Y] = meshgrid(1:size(depthImg,2), 1:size(depthImg,1));
+X = X - KD.cx;  % Center the X plane
+Y = Y - KD.cy;  % Center the Y plane
+
+% Global 3D coordinates
+X = depthImg.*X / KD.fp;
+Y = depthImg.*Y / KD.fp;
+Z = depthImg;
+
+% From global 3D to camera coordinates
+u = zeros(size(depthImg,1),size(depthImg,2));
+v = zeros(size(depthImg,1),size(depthImg,2));
+z = zeros(size(depthImg,1),size(depthImg,2));
+
+for x = 1:1:size(depthImg,2)
+    for y = 1:1:size(depthImg,1)
+        k=[R T]*[double(X(y,x)); double(Y(y,x)); double(Z(y,x)); double(1)];
+        u(y,x)=KC.fp*(k(1)/k(3))+KC.cx;
+        v(y,x)=KC.fp*(k(2)/k(3))+KC.cy;
+        z(y,x)=k(3);
+    end
+end
+colorCamDepth = z;
+XYZCam = cat(3,u,v,z);
+
+% Mapping of color data to depth image plane.
+resampledColorImg = zeros(size(depthImg,1),size(depthImg,2), 3);
+[x_grid, y_grid] = meshgrid(1:1:size(colorImg,2),1:1:size(colorImg,1));
+resampledColorImg(:,:,1) = interp2(x_grid, y_grid, double(colorImg(:,:,1)), u, v);
+resampledColorImg(:,:,2) = interp2(x_grid, y_grid, double(colorImg(:,:,2)), u, v);
+resampledColorImg(:,:,3) = interp2(x_grid, y_grid, double(colorImg(:,:,3)), u, v);
+
 % Output:
 %   resampledColorImg - resampled color image (same resolution than depth image)
 %   colorCamDepth - respective depth from color camera viewpoint
