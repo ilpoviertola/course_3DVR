@@ -130,11 +130,16 @@ load synthdata.mat
 distMap = double(Depth);
 colorImg = im2double(Image);
 
+Dparam.fp = Dparam.fx / Dparam.pixelsize;
+Cparam.fp = Cparam.f / Cparam.pixelsize;
+KD = Dparam;
+KC = Cparam;
+
 % Convert distance map to depth:
-depthImg = DistToDepth(distMap, KD);
+depthImg = Dist2Depth(distMap, KD);
 
 % Mapping colour data to depth image plane:
-[resampledColorImage, colorCamDepth, XYZCam] = GetMappedColor(KC, KD, ...
+[resampledColorImage, colorCamDepth, XYZCam] = MapColor(KC, KD, ...
                                               colorImg, depthImg, ...
                                               R,T);
 
@@ -146,6 +151,9 @@ Bch = resampledColorImage(:,:,3); Bch(depthImg > valToDiscard) = 0;
 resampledColorImage = cat(3, Rch, Gch, Bch);
 % Assign nan to depth values that we don't care:
 depthImg(depthImg > valToDiscard) = nan;
+
+figure, imshow(resampledColorImage);
+title('Foreground objects on color data mapped to depth');
 
 
 %% 3D scene reconstruction - Task 2.3 / Task 2.6
