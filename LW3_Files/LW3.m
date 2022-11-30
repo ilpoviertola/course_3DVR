@@ -42,14 +42,14 @@ end
 sceneObj = Scene();
 
 % Load 3D objects from ply files and them add to sceneObj:
-sceneObj = sceneObj.LoadObject3D('cube');
+%sceneObj = sceneObj.LoadObject3D('cube');
 
 % Create 3D object from ply file:
 mesh1 = Object3D('pyramid');
 
 % Change some properties of the mesh and add it to sceneObj: 
 mesh1 = mesh1.SetScale([1.5, 1.5, 1.5]);
-mesh1 = mesh1.SetPosition([0, 0, 1.5]);
+mesh1 = mesh1.SetPosition([0, 0, 15]);
 mesh1 = mesh1.SetRotationX(-90);
 sceneObj = sceneObj.AddObject3D(mesh1);
 
@@ -89,11 +89,12 @@ mesh2.FacesColor = [1   1   0   0   0   0   1   1   0   0   1   1; ... %R
 mesh2.FacesCount = size(mesh2.FacesColor, 2);
 
 % Set material
-mesh2.Material.SetMaterial(1.0, 0.3, 1.0, 25, 0.1);
+mesh2.Material.SetMaterial(0.2, 0.7, 0.2, 5, 0.7);
 
 % Apply some transformations: 
 mesh2 = mesh2.SetScale([0.1, 0.1, 0.1]);
-mesh2 = mesh2.SetPosition([1.5, 0, -2]);
+
+mesh2 = mesh2.SetPosition([2, 5, 10]);
 
 % Add custom object to sceneObj:
 sceneObj = sceneObj.AddObject3D(mesh2);
@@ -105,7 +106,7 @@ sceneObj.MainCamera.FoV = 60;
 
 % Change light(s) attributes
 sceneObj.ListOfLightSources{1}.Type = 'local';
-sceneObj.ListOfLightSources{1}.Position = [0, 0, 1];
+sceneObj.ListOfLightSources{1}.Position = [0, 0, 6];
 
 % Preview 3D model(s)
  figure,
@@ -158,27 +159,27 @@ title('Foreground objects on color data mapped to depth');
 
 %% 3D scene reconstruction - Task 2.3 / Task 2.6
 %2D points
-%x = 1:size(depthImg,2);
-%y = 1:size(depthImg,1);
-%[u,v] = meshgrid(x,y);
-%tri = delaunayTriangulation(u(:),v(:));
+x = 1:size(depthImg,2);
+y = 1:size(depthImg,1);
+[u,v] = meshgrid(x,y);
+tri = delaunayTriangulation(u(:),v(:));
 % Preview triangulated mesh:
-%faceColorR = resampledColorImage(:,:,1); faceColorR = faceColorR(:);
-%faceColorG = resampledColorImage(:,:,2); faceColorG = faceColorG(:);
-%faceColorB = resampledColorImage(:,:,3); faceColorB = faceColorB(:);
-%faceColor = [faceColorR, faceColorG, faceColorB];
-%trisurf(tri.ConnectivityList, u(:), v(:), depthImg(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+faceColorR = resampledColorImage(:,:,1); faceColorR = faceColorR(:);
+faceColorG = resampledColorImage(:,:,2); faceColorG = faceColorG(:);
+faceColorB = resampledColorImage(:,:,3); faceColorB = faceColorB(:);
+faceColor = [faceColorR, faceColorG, faceColorB];
+trisurf(tri.ConnectivityList, u(:), v(:), depthImg(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
 
 
 %3D points
-X=mesh1.XYZ(1,:)';
-Y=mesh1.XYZ(2,:)';
-Z=mesh1.XYZ(3,:)';
+%X=mesh1.XYZ(1,:)';
+%Y=mesh1.XYZ(2,:)';
+%Z=mesh1.XYZ(3,:)';
 
-tri = delaunayTriangulation(X(:), Y(:), Z(:));
+%tri = delaunayTriangulation(X(:), Y(:), Z(:));
 
-[K,v] = convexHull(tri);
-trisurf(K, X(:), Y(:), Z(:));
+%[K,v] = convexHull(tri);
+%trisurf(K, X(:), Y(:), Z(:));
 
 
 %% Rendering pipeline - Task 2.4 / 2.5 / 2.6
@@ -186,6 +187,7 @@ deltaTime = 0;
 lastFrameTime = 0;
 clock = tic; % start timer
 frameCount = 0;
+x=0.05;
 
 while (ishandle(wh1) && ishandle(wh2))
     
@@ -205,16 +207,16 @@ while (ishandle(wh1) && ishandle(wh2))
     
     %% Add more 3D models, add animations or/and change attributes - Task 2.4
     %Rotate object:
-    obj1 = sceneObj.ListOfObjects3D{3};
-    angleY = 1;
+    obj1 = sceneObj.ListOfObjects3D{2};
+    angleY = 3;
     obj1 = obj1.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
-    if obj1.PositionVec(1,1)>1
-        x=-0.1;
-    elseif obj1.PositionVec(1,1)<-1
-        x=0.1;
+    if obj1.PositionVec(1,1)>16
+        x=-0.05;
+    elseif obj1.PositionVec(1,1)<2
+        x=0.05;
     end
     obj1 = obj1.Translate([x,0,0]);
-    sceneObj.ListOfObjects3D{3} = obj1;
+    sceneObj.ListOfObjects3D{2} = obj1;
 
 
     % Render 3DView (DO NOT EDIT EXCEPT FOR THE AXES LIMIT)
@@ -223,9 +225,9 @@ while (ishandle(wh1) && ishandle(wh2))
         sceneObj.RenderScene(DISPLAYPOINTCLOUD, DEBUG);
         axis on;
         % Axes limit (swapped order because of Matlab plot)
-        xlim([-3, 2]); % Fix Z limit
-        ylim([-2, 2]); % Fix X limit
-        zlim([-2, 2]); % Fix Y limit
+        xlim([-1, 20]); % Fix Z limit
+        ylim([-8, 18]); % Fix X limit
+        zlim([-8, 8]); % Fix Y limit
     end
 
 
@@ -234,6 +236,7 @@ while (ishandle(wh1) && ishandle(wh2))
 
     %% Fused data - Task 2.5
 
+    
     set(0,'CurrentFigure',wh2); % Activate XRView window
     cla; % Clear content
     ax = gca; % Get handle to current axes and change some attributes
@@ -249,13 +252,31 @@ while (ishandle(wh1) && ishandle(wh2))
     
    
     % Draw virtual content and real-world content:
+    
 
 
     % "Render" light source:
-    %lt = light(gca);
-    %lt.Color = sceneObj.ListOfLightSources{1}.Color;
-    %lt.Style = sceneObj.ListOfLightSources{1}.Type;
-    %lt.Position = ...
+    lt = light(gca);
+    lt.Color = sceneObj.ListOfLightSources{1}.Color;
+    lt.Style = sceneObj.ListOfLightSources{1}.Type;
+    lt.Position = sceneObj.ListOfLightSources{1}.Position;
+    sceneObj.ListOfLightSources{1}.Position=[5,4,6];
+    lt.Visible = sceneObj.ListOfLightSources{1}.Visible;
+
+    %trisurf(tri.ConnectivityList, u(:), v(:), depthImg(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+
+    %obj1 = sceneObj.ListOfObjects3D{1};
+    %trisurf(obj1.TriangleNodes', obj1.XYZ(1,:)', obj1.XYZ(2,:)', obj1.XYZ(3,:)')
+
+    obj3 = sceneObj.ListOfObjects3D{2};
+    %trisurf(obj3.TriangleNodes', obj3.XYZ(1,:)', obj3.XYZ(2,:)', obj3.XYZ(3,:)')
+    
+    
+    resX=20;
+    resY=20;
+
+    %patch(ax, 'Faces', obj3.TriangleNodes', 'Vertices', obj3.XYZ')
+    patch(ax, 'Faces', obj3.TriangleNodes', 'Vertices', obj3.XYZ')
 
     hold off;
     
@@ -267,7 +288,7 @@ while (ishandle(wh1) && ishandle(wh2))
     ylim([1, resY]); % XRView image resolution height
     zlim([0.01, 20]); % near / far clip - XRView camera
     pbaspect([1, resY/resX, 1]); %Fix aspect ratio of axis box (DO NOT EDIT)
-
+   
     
     drawnow();
 end
