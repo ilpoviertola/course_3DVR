@@ -61,9 +61,9 @@ mesh2 = Object3D();
 mesh2.Name = 'My custom mesh';
 
 % Vertices
-mesh2.XYZ = [0 0  0  1 0  1 1 1; ... %X
-             0 0  1 0  1 0  1 1; ... %Y
-             0 1 0  0  1 1 0  1];    %Z  
+mesh2.XYZ = [-5 -5 -5  5 -5  5  5  5; ... %X
+             -5 -5  5 -5  5 -5  5  5; ... %Y
+             -5  5 -5 -5  5  5 -5  5];    %Z  
 
 % Number of vertices
 mesh2.VerticesCount = size(mesh2.XYZ, 2);
@@ -89,11 +89,11 @@ mesh2.FacesColor = [1   1   0   0   0   0   1   1   0   0   1   1; ... %R
 mesh2.FacesCount = size(mesh2.FacesColor, 2);
 
 % Set material
-mesh2.Material.SetMaterial(0.3, 0.3, 1.0, 25, 0.5);
+mesh2.Material.SetMaterial(1.0, 0.3, 1.0, 25, 0.1);
 
 % Apply some transformations: 
-mesh2 = mesh2.SetScale([1, 1, 1]);
-mesh2 = mesh2.SetPosition([0, 0, 2.5]);
+mesh2 = mesh2.SetScale([0.1, 0.1, 0.1]);
+mesh2 = mesh2.SetPosition([1.5, 0, -2]);
 
 % Add custom object to sceneObj:
 sceneObj = sceneObj.AddObject3D(mesh2);
@@ -205,10 +205,16 @@ while (ishandle(wh1) && ishandle(wh2))
     
     %% Add more 3D models, add animations or/and change attributes - Task 2.4
     %Rotate object:
-    %obj1 = sceneObj.ListOfObjects3D{2};
-    %angleY = 1;
-    %obj1 = obj1.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
-    %sceneObj.ListOfObjects3D{2} = obj1;
+    obj1 = sceneObj.ListOfObjects3D{3};
+    angleY = 1;
+    obj1 = obj1.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
+    if obj1.PositionVec(1,1)>1
+        x=-0.1;
+    elseif obj1.PositionVec(1,1)<-1
+        x=0.1;
+    end
+    obj1 = obj1.Translate([x,0,0]);
+    sceneObj.ListOfObjects3D{3} = obj1;
 
 
     % Render 3DView (DO NOT EDIT EXCEPT FOR THE AXES LIMIT)
@@ -217,7 +223,7 @@ while (ishandle(wh1) && ishandle(wh2))
         sceneObj.RenderScene(DISPLAYPOINTCLOUD, DEBUG);
         axis on;
         % Axes limit (swapped order because of Matlab plot)
-        xlim([-1, 2]); % Fix Z limit
+        xlim([-3, 2]); % Fix Z limit
         ylim([-2, 2]); % Fix X limit
         zlim([-2, 2]); % Fix Y limit
     end
