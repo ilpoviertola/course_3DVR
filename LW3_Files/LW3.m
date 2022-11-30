@@ -61,9 +61,9 @@ mesh2 = Object3D();
 mesh2.Name = 'My custom mesh';
 
 % Vertices
-mesh2.XYZ = [0 0  0  10 0  10 10 10; ... %X
-             0 0  10 0  10 0  10 10; ... %Y
-             0 10 0  0  10 10 0  10];    %Z  
+mesh2.XYZ = [0 0  0  1 0  1 1 1; ... %X
+             0 0  1 0  1 0  1 1; ... %Y
+             0 1 0  0  1 1 0  1];    %Z  
 
 % Number of vertices
 mesh2.VerticesCount = size(mesh2.XYZ, 2);
@@ -92,8 +92,8 @@ mesh2.FacesCount = size(mesh2.FacesColor, 2);
 mesh2.Material.SetMaterial(0.3, 0.3, 1.0, 25, 0.5);
 
 % Apply some transformations: 
-mesh2 = mesh2.SetScale([0.1, 0.1, 0.1]);
-mesh2 = mesh2.SetPosition([2, 0, 2.5]);
+mesh2 = mesh2.SetScale([1, 1, 1]);
+mesh2 = mesh2.SetPosition([0, 0, 2.5]);
 
 % Add custom object to sceneObj:
 sceneObj = sceneObj.AddObject3D(mesh2);
@@ -157,16 +157,28 @@ title('Foreground objects on color data mapped to depth');
 
 
 %% 3D scene reconstruction - Task 2.3 / Task 2.6
-
+%2D points
+%x = 1:size(depthImg,2);
+%y = 1:size(depthImg,1);
+%[u,v] = meshgrid(x,y);
 %tri = delaunayTriangulation(u(:),v(:));
-%tri = delaunayTriangulation(X(:),Y(:),Z(:));
-
 % Preview triangulated mesh:
-% faceColorR = resampledColorImage(:,:,1); faceColorR = faceColorR(:);
-% faceColorG = resampledColorImage(:,:,2); faceColorG = faceColorG(:);
-% faceColorB = resampledColorImage(:,:,3); faceColorB = faceColorB(:);
-% faceColor = [faceColorR, faceColorG, faceColorB];
-%trisurf(tri.ConnectivityList, u(:), v(:), Z(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+%faceColorR = resampledColorImage(:,:,1); faceColorR = faceColorR(:);
+%faceColorG = resampledColorImage(:,:,2); faceColorG = faceColorG(:);
+%faceColorB = resampledColorImage(:,:,3); faceColorB = faceColorB(:);
+%faceColor = [faceColorR, faceColorG, faceColorB];
+%trisurf(tri.ConnectivityList, u(:), v(:), depthImg(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+
+
+%3D points
+X=mesh1.XYZ(1,:)';
+Y=mesh1.XYZ(2,:)';
+Z=mesh1.XYZ(3,:)';
+
+tri = delaunayTriangulation(X(:), Y(:), Z(:));
+
+[K,v] = convexHull(tri);
+trisurf(K, X(:), Y(:), Z(:));
 
 
 %% Rendering pipeline - Task 2.4 / 2.5 / 2.6
