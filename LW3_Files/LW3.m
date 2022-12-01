@@ -274,14 +274,12 @@ while (ishandle(wh1) && ishandle(wh2))
     resY=size(depthImg_downscale,1);
     
     
-    for i=1:length(sceneObj.ListOfObjects3D)
+    for i=1:length(sceneObj.ListOfObjects3D)             
+        obj=sceneObj.ListOfObjects3D{i};
+        obj=obj.SetScale(obj.ScaleVec*20);
+        obj.XYZ(1,:)=(obj.XYZ(1,:)+resX/2);
+        obj.XYZ(2,:)=(obj.XYZ(2,:)+resY/2);
         for c = 1:size(sceneObj.ListOfObjects3D{i}.TriangleNodes, 2)
-             obj=sceneObj.ListOfObjects3D{i};
-             obj.SetScale([10,10,10]);
-             obj.XYZ(1,:)=(obj.XYZ(1,:)+resX/2);
-             obj.XYZ(2,:)=(obj.XYZ(2,:)+resY/2);
-             
-
              patch('Faces', [1 2 3], ...
                  'Vertices', [obj.XYZ(:,obj.TriangleNodes(1, c)), ...
                  obj.XYZ(:,obj.TriangleNodes(2, c)), ...
