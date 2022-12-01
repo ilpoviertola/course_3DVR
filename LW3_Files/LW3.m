@@ -49,8 +49,10 @@ mesh1 = Object3D('pyramid');
 
 % Change some properties of the mesh and add it to sceneObj: 
 mesh1 = mesh1.SetScale([1.5, 1.5, 1.5]);
-mesh1 = mesh1.SetPosition([0, 0, 15]);
+mesh1 = mesh1.SetPosition([0, 0, 6]);
 mesh1 = mesh1.SetRotationX(-90);
+%mesh1.Material.SetMaterial(0.2, 0.7, 0.2, 5, 0.7);
+mesh1.Material.SetMaterial(1.0, 1.0, 1.0, 25, 1.0);
 sceneObj = sceneObj.AddObject3D(mesh1);
 
 % Create a custom mesh:
@@ -93,8 +95,9 @@ mesh2.Material.SetMaterial(0.2, 0.7, 0.2, 5, 0.7);
 
 % Apply some transformations: 
 mesh2 = mesh2.SetScale([0.1, 0.1, 0.1]);
+%mesh2 = mesh2.SetScale([10, 10, 10]);
 
-mesh2 = mesh2.SetPosition([2, 5, 10]);
+mesh2 = mesh2.SetPosition([0, 0, 5]);
 
 % Add custom object to sceneObj:
 sceneObj = sceneObj.AddObject3D(mesh2);
@@ -159,16 +162,18 @@ title('Foreground objects on color data mapped to depth');
 
 %% 3D scene reconstruction - Task 2.3 / Task 2.6
 %2D points
-x = 1:size(depthImg,2);
-y = 1:size(depthImg,1);
+depthImg_downscale = imresize(depthImg,0.4,'nearest');
+x = 1:size(depthImg_downscale,2);
+y = 1:size(depthImg_downscale,1);
 [u,v] = meshgrid(x,y);
 tri = delaunayTriangulation(u(:),v(:));
 % Preview triangulated mesh:
-faceColorR = resampledColorImage(:,:,1); faceColorR = faceColorR(:);
-faceColorG = resampledColorImage(:,:,2); faceColorG = faceColorG(:);
-faceColorB = resampledColorImage(:,:,3); faceColorB = faceColorB(:);
+resampledColorImage_downscale=imresize(resampledColorImage,0.4,'nearest');
+faceColorR = resampledColorImage_downscale(:,:,1); faceColorR = faceColorR(:);
+faceColorG = resampledColorImage_downscale(:,:,2); faceColorG = faceColorG(:);
+faceColorB = resampledColorImage_downscale(:,:,3); faceColorB = faceColorB(:);
 faceColor = [faceColorR, faceColorG, faceColorB];
-trisurf(tri.ConnectivityList, u(:), v(:), depthImg(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+trisurf(tri.ConnectivityList, u(:), v(:), depthImg_downscale(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
 
 
 %3D points
@@ -187,7 +192,7 @@ deltaTime = 0;
 lastFrameTime = 0;
 clock = tic; % start timer
 frameCount = 0;
-x=0.05;
+z=0.1;
 
 while (ishandle(wh1) && ishandle(wh2))
     
@@ -207,16 +212,16 @@ while (ishandle(wh1) && ishandle(wh2))
     
     %% Add more 3D models, add animations or/and change attributes - Task 2.4
     %Rotate object:
-    obj1 = sceneObj.ListOfObjects3D{2};
+    obj2 = sceneObj.ListOfObjects3D{2};
     angleY = 3;
-    obj1 = obj1.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
-    if obj1.PositionVec(1,1)>16
-        x=-0.05;
-    elseif obj1.PositionVec(1,1)<2
-        x=0.05;
+    obj2 = obj2.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
+    if obj2.PositionVec(3,1)>10
+        z=-0.1;
+    elseif obj2.PositionVec(3,1)<2
+        z=0.1;
     end
-    obj1 = obj1.Translate([x,0,0]);
-    sceneObj.ListOfObjects3D{2} = obj1;
+    obj2 = obj2.Translate([0,0,z]);
+    sceneObj.ListOfObjects3D{2} = obj2;
 
 
     % Render 3DView (DO NOT EDIT EXCEPT FOR THE AXES LIMIT)
@@ -226,7 +231,7 @@ while (ishandle(wh1) && ishandle(wh2))
         axis on;
         % Axes limit (swapped order because of Matlab plot)
         xlim([-1, 20]); % Fix Z limit
-        ylim([-8, 18]); % Fix X limit
+        ylim([-8, 8]); % Fix X limit
         zlim([-8, 8]); % Fix Y limit
     end
 
@@ -259,24 +264,46 @@ while (ishandle(wh1) && ishandle(wh2))
     lt = light(gca);
     lt.Color = sceneObj.ListOfLightSources{1}.Color;
     lt.Style = sceneObj.ListOfLightSources{1}.Type;
+    sceneObj.ListOfLightSources{1}.Position=[0,0,2];
     lt.Position = sceneObj.ListOfLightSources{1}.Position;
-    sceneObj.ListOfLightSources{1}.Position=[5,4,6];
     lt.Visible = sceneObj.ListOfLightSources{1}.Visible;
+    
+    
+    
+    resX=size(depthImg_downscale,2);
+    resY=size(depthImg_downscale,1);
+    
+    
+    for i=1:length(sceneObj.ListOfObjects3D)
+        for c = 1:size(sceneObj.ListOfObjects3D{i}.TriangleNodes, 2)
+             obj=sceneObj.ListOfObjects3D{i};
+             obj.SetScale([10,10,10]);
+             obj.XYZ(1,:)=(obj.XYZ(1,:)+resX/2);
+             obj.XYZ(2,:)=(obj.XYZ(2,:)+resY/2);
+             
 
-    %trisurf(tri.ConnectivityList, u(:), v(:), depthImg(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+             patch('Faces', [1 2 3], ...
+                 'Vertices', [obj.XYZ(:,obj.TriangleNodes(1, c)), ...
+                 obj.XYZ(:,obj.TriangleNodes(2, c)), ...
+                 obj.XYZ(:,obj.TriangleNodes(3, c))]', ...
+                 'FaceColor', obj.FacesColor(1:3,c), ...
+                 'FaceAlpha', obj.FacesColor(4,c), ...
+                 'EdgeColor', 'none');
+        end
+     end
+    %obj2 = sceneObj.ListOfObjects3D{2};
+   % obj2.XYZ(1,:)=(obj2.XYZ(1,:)+resX/2);
+    %obj2.XYZ(2,:)=(obj2.XYZ(2,:)+resY/2);
+
 
     %obj1 = sceneObj.ListOfObjects3D{1};
-    %trisurf(obj1.TriangleNodes', obj1.XYZ(1,:)', obj1.XYZ(2,:)', obj1.XYZ(3,:)')
-
-    obj3 = sceneObj.ListOfObjects3D{2};
-    %trisurf(obj3.TriangleNodes', obj3.XYZ(1,:)', obj3.XYZ(2,:)', obj3.XYZ(3,:)')
     
     
-    resX=20;
-    resY=20;
 
-    %patch(ax, 'Faces', obj3.TriangleNodes', 'Vertices', obj3.XYZ')
-    patch(ax, 'Faces', obj3.TriangleNodes', 'Vertices', obj3.XYZ')
+    %patch(ax, 'Faces', obj2.TriangleNodes', 'Vertices', obj2.XYZ')
+    %patch(ax, 'Faces', obj1.TriangleNodes', 'Vertices', obj1.XYZ')
+    trisurf(tri.ConnectivityList, u(:), v(:), depthImg_downscale(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
+    %patch(ax, 'Faces', tri.ConnectivityList, 'Vertices', cat(2,u(:), v(:), depthImg_downscale(:)))
 
     hold off;
     
