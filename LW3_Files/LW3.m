@@ -49,7 +49,7 @@ mesh1 = Object3D('pyramid');
 
 % Change some properties of the mesh and add it to sceneObj: 
 mesh1 = mesh1.SetScale([1.5, 1.5, 1.5]);
-mesh1 = mesh1.SetPosition([0, 0, 6]);
+mesh1 = mesh1.SetPosition([4, 3, 10]);
 mesh1 = mesh1.SetRotationX(-90);
 %mesh1.Material.SetMaterial(0.2, 0.7, 0.2, 5, 0.7);
 mesh1.Material.SetMaterial(1.0, 1.0, 1.0, 25, 1.0);
@@ -95,9 +95,8 @@ mesh2.Material.SetMaterial(0.2, 0.7, 0.2, 5, 0.7);
 
 % Apply some transformations: 
 mesh2 = mesh2.SetScale([0.1, 0.1, 0.1]);
-%mesh2 = mesh2.SetScale([10, 10, 10]);
 
-mesh2 = mesh2.SetPosition([0, 0, 5]);
+mesh2 = mesh2.SetPosition([3, 2, 5]);
 
 % Add custom object to sceneObj:
 sceneObj = sceneObj.AddObject3D(mesh2);
@@ -162,13 +161,16 @@ title('Foreground objects on color data mapped to depth');
 
 %% 3D scene reconstruction - Task 2.3 / Task 2.6
 %2D points
-depthImg_downscale = imresize(depthImg,0.4,'nearest');
+depthImg_downscale = imresize(depthImg,1,'nearest');
+
 x = 1:size(depthImg_downscale,2);
 y = 1:size(depthImg_downscale,1);
 [u,v] = meshgrid(x,y);
+
 tri = delaunayTriangulation(u(:),v(:));
+
 % Preview triangulated mesh:
-resampledColorImage_downscale=imresize(resampledColorImage,0.4,'nearest');
+resampledColorImage_downscale=imresize(resampledColorImage,1,'nearest');
 faceColorR = resampledColorImage_downscale(:,:,1); faceColorR = faceColorR(:);
 faceColorG = resampledColorImage_downscale(:,:,2); faceColorG = faceColorG(:);
 faceColorB = resampledColorImage_downscale(:,:,3); faceColorB = faceColorB(:);
@@ -193,6 +195,7 @@ lastFrameTime = 0;
 clock = tic; % start timer
 frameCount = 0;
 z=0.1;
+z_scale=20;
 
 while (ishandle(wh1) && ishandle(wh2))
     
@@ -215,9 +218,9 @@ while (ishandle(wh1) && ishandle(wh2))
     obj2 = sceneObj.ListOfObjects3D{2};
     angleY = 3;
     obj2 = obj2.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
-    if obj2.PositionVec(3,1)>10
+    if obj2.PositionVec(3,1)>15
         z=-0.1;
-    elseif obj2.PositionVec(3,1)<2
+    elseif obj2.PositionVec(3,1)<5
         z=0.1;
     end
     obj2 = obj2.Translate([0,0,z]);
@@ -269,18 +272,27 @@ while (ishandle(wh1) && ishandle(wh2))
     lt.Visible = sceneObj.ListOfLightSources{1}.Visible;
     
     
-    
     resX=size(depthImg_downscale,2);
     resY=size(depthImg_downscale,1);
-    
-    
-    for i=1:length(sceneObj.ListOfObjects3D)             
+   
+    for i=1:length(sceneObj.ListOfObjects3D)   
         obj=sceneObj.ListOfObjects3D{i};
-        obj=obj.SetScale(obj.ScaleVec*20);
-        obj.XYZ(1,:)=(obj.XYZ(1,:)+resX/2);
-        obj.XYZ(2,:)=(obj.XYZ(2,:)+resY/2);
+        obj = obj.Rotate([180,0,0]);
+
+        for j=1:length(obj.XYZ(1,:))
+            P1=cat(1,obj.XYZ(:,j),1)./[Dparam.pixelsize; Dparam.pixelsize; 1; 1];
+            
+            k=[1 0 0 resX/2; 0 1 0 resY/2; 0 0 1 0];
+            f=[Dparam.fx 0 Dparam.cx;
+                0 Dparam.fy Dparam.cy;
+                0 0 1];
+            m=f*k*P1;
+
+            obj.XYZ(1,j)=m(1)/m(3);
+            obj.XYZ(2,j)=m(2)/m(3);
+        end
         for c = 1:size(sceneObj.ListOfObjects3D{i}.TriangleNodes, 2)
-             patch('Faces', [1 2 3], ...
+             patch(ax, 'Faces', [1 2 3], ...
                  'Vertices', [obj.XYZ(:,obj.TriangleNodes(1, c)), ...
                  obj.XYZ(:,obj.TriangleNodes(2, c)), ...
                  obj.XYZ(:,obj.TriangleNodes(3, c))]', ...
@@ -288,20 +300,11 @@ while (ishandle(wh1) && ishandle(wh2))
                  'FaceAlpha', obj.FacesColor(4,c), ...
                  'EdgeColor', 'none');
         end
-     end
-    %obj2 = sceneObj.ListOfObjects3D{2};
-   % obj2.XYZ(1,:)=(obj2.XYZ(1,:)+resX/2);
-    %obj2.XYZ(2,:)=(obj2.XYZ(2,:)+resY/2);
-
-
-    %obj1 = sceneObj.ListOfObjects3D{1};
+    end
     
     
 
-    %patch(ax, 'Faces', obj2.TriangleNodes', 'Vertices', obj2.XYZ')
-    %patch(ax, 'Faces', obj1.TriangleNodes', 'Vertices', obj1.XYZ')
     trisurf(tri.ConnectivityList, u(:), v(:), depthImg_downscale(:), 'FaceVertexCData', faceColor, 'EdgeColor', 'none');
-    %patch(ax, 'Faces', tri.ConnectivityList, 'Vertices', cat(2,u(:), v(:), depthImg_downscale(:)))
 
     hold off;
     
