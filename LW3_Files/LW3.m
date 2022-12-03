@@ -161,8 +161,8 @@ title('Foreground objects on color data mapped to depth');
 
 %% 3D scene reconstruction - Task 2.3 / Task 2.6
 %2D points
-downscaler=1;
-depthImg_downscale = imresize(depthImg,downscaler,'nearest');
+downscaler=4;
+depthImg_downscale = imresize(depthImg,1/downscaler,'nearest');
 
 x = 1:size(depthImg_downscale,2);
 y = 1:size(depthImg_downscale,1);
@@ -171,7 +171,7 @@ y = 1:size(depthImg_downscale,1);
 tri = delaunayTriangulation(u(:),v(:));
 
 % Preview triangulated mesh:
-resampledColorImage_downscale=imresize(resampledColorImage,downscaler,'nearest');
+resampledColorImage_downscale=imresize(resampledColorImage,1/downscaler,'nearest');
 faceColorR = resampledColorImage_downscale(:,:,1); faceColorR = faceColorR(:);
 faceColorG = resampledColorImage_downscale(:,:,2); faceColorG = faceColorG(:);
 faceColorB = resampledColorImage_downscale(:,:,3); faceColorB = faceColorB(:);
@@ -218,7 +218,7 @@ while (ishandle(wh1) && ishandle(wh2))
     %Rotate object:
     obj2 = sceneObj.ListOfObjects3D{2};
     angleY = 3;
-    obj2 = obj2.Rotate([0, angleY * deltaTime, 0]); % Rotate ~1 degree on every iteration
+    obj2 = obj2.Rotate([0, angleY * deltaTime * downscaler, 0]); % Rotate ~1 degree on every iteration
     if obj2.PositionVec(3,1)>15
         z=-0.1;
     elseif obj2.PositionVec(3,1)<5
@@ -276,6 +276,12 @@ while (ishandle(wh1) && ishandle(wh2))
     resX=size(depthImg_downscale,2);
     resY=size(depthImg_downscale,1);
    
+    cx = floor(Dparam.cx/downscaler)+0.5;
+    cy = floor(Dparam.cy/downscaler)+0.5;
+
+    fx = Dparam.fx/downscaler;
+    fy = Dparam.fy/downscaler;
+
     for i=1:length(sceneObj.ListOfObjects3D)   
         obj=sceneObj.ListOfObjects3D{i};
         %obj = obj.Rotate([180,0,0]);
@@ -284,8 +290,8 @@ while (ishandle(wh1) && ishandle(wh2))
             P1=cat(1,obj.XYZ(:,j),1)./[-Dparam.pixelsize; -Dparam.pixelsize; 1; 1];
             
             k=[1 0 0 resX/2; 0 1 0 resY/2; 0 0 1 0];
-            f=[Dparam.fx 0 Dparam.cx;
-                0 Dparam.fy Dparam.cy;
+            f=[fx 0 cx;
+                0 fy cy;
                 0 0 1];
             m=f*k*P1;
 
