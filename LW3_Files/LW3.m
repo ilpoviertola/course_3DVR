@@ -101,6 +101,12 @@ mesh2 = mesh2.SetPosition([3, 2, 5]);
 % Add custom object to sceneObj:
 sceneObj = sceneObj.AddObject3D(mesh2);
 
+mesh3 = Object3D('cube');
+mesh3 = mesh3.SetScale([0.3, 0.3, 0.3]);
+mesh3 = mesh3.SetPosition([-4, 1, 10]);
+mesh3 = mesh3.SetRotationX(45);
+sceneObj = sceneObj.AddObject3D(mesh3);
+
 % Change main camera view (3DView window)
 sceneObj.MainCamera.Yaw = sceneObj.MainCamera.Yaw - 145; 
 sceneObj.MainCamera.Pitch = sceneObj.MainCamera.Pitch + 10;
@@ -226,6 +232,12 @@ while (ishandle(wh1) && ishandle(wh2))
     end
     obj2 = obj2.Translate([0,0,z]);
     sceneObj.ListOfObjects3D{2} = obj2;
+
+    obj3 = sceneObj.ListOfObjects3D{3};
+    angleY = 10;
+    obj3 = obj3.Rotate([0, -angleY * deltaTime * downscaler, 0]);
+    obj3 = obj3.Translate([sin(lastFrameTime)/10,0,cos(lastFrameTime)/8]);
+    sceneObj.ListOfObjects3D{3} = obj3;
 
 
     % Render 3DView (DO NOT EDIT EXCEPT FOR THE AXES LIMIT)
