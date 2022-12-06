@@ -7,8 +7,8 @@
 %
 % Fill out the information below
 %
-% Group members:
-% Additional tasks completed (5, 6, 7):
+% Group members: Ilpo Viertola, Petri Vainio, Henrik Lauronen
+% Additional tasks completed (5, 6, 7): 5, 7
 %
 %--------------------------------------------------------------------------
 clc; clear; close all;
